@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Database
+db.sqlite3
+
+# Node/React build
+react_app/node_modules/
+react_app/build/
