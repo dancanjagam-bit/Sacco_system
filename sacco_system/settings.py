@@ -20,8 +20,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',   # Django REST Framework
-    'members',          # your app
+
+    # Third-party
+    'rest_framework',
+
+    # Your apps
+'members.apps.MembersConfig',
 ]
 
 MIDDLEWARE = [
@@ -36,17 +40,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'sacco_system.urls'
 
+# React + Django integration
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, "react_app/build")],  # React build folder
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "react_app", "build")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
@@ -55,7 +60,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'sacco_system.wsgi.application'
 
 # Database
-# Default: SQLite. Change to PostgreSQL/MySQL if needed.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -85,16 +89,23 @@ TIME_ZONE = 'Africa/Nairobi'
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Static files (React build + Django static)
 STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "react_app/build/static"),  # React static assets
+    os.path.join(BASE_DIR, "react_app", "build", "static"),
 ]
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR.parent, "react_app/build/static"),
-]
-TEMPLATES[0]['DIRS'] = [os.path.join(BASE_DIR.parent, "react_app/build")]
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    )
+}

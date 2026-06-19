@@ -5,20 +5,18 @@ function RepaymentHistory({ memberId }) {
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
-    axios.get("/api/transactions/")
-      .then(response => {
-        // filter only repayments for this member
-        const repayments = response.data.filter(
-          tx => tx.member === memberId && tx.source === "Loan Repayment"
-        );
-        setTransactions(repayments);
-      })
+    if (!memberId) return;
+
+    axios
+      .get(`/api/transactions/?member=${memberId}`)
+      .then(res => setTransactions(res.data))
       .catch(error => console.error(error));
   }, [memberId]);
 
   return (
     <div>
       <h4>Repayment History</h4>
+
       {transactions.length === 0 ? (
         <p>No repayments yet.</p>
       ) : (
@@ -29,6 +27,7 @@ function RepaymentHistory({ memberId }) {
               <th>Date</th>
             </tr>
           </thead>
+
           <tbody>
             {transactions.map(tx => (
               <tr key={tx.id}>

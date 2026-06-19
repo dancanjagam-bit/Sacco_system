@@ -1,43 +1,94 @@
 .App {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+}
+
+/* Navigation bar */
+.navbar {
+  background-color: #004080;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar h1 {
+  color: white;
+  margin: 0;
+}
+
+.navbar ul {
+  list-style: none;
+  display: flex;
+  gap: 15px;
+  margin: 0;
+  padding: 0;
+}
+
+.navbar li {
+  display: inline;
+}
+
+.navbar a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.navbar a:hover {
+  text-decoration: underline;
+}
+
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+th {
+  background-color: #004080;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+tr:nth-child(even) {
+  background-color: #f9f9f9;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Buttons */
+button {
+  background-color: #004080;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  margin: 4px;
+  cursor: pointer;
+  border-radius: 4px;
 }
 
-.repaid-loan {
+button:hover {
+  background-color: #0066cc;
+}
+
+/* Loan status highlighting */
+.repaid-row {
   background-color: #d4edda; /* light green */
   color: #155724;           /* dark green text */
 }
+
+.pending-row {
+  background-color: #fff3cd; /* light yellow */
+  color: #856404;           /* dark yellow text */
+}
+
+.approved-row {
+  background-color: #cce5ff; /* light blue */
+  color: #004085;           /* dark blue text */
+}
+
