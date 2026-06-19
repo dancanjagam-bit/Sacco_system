@@ -52,6 +52,38 @@ class MemberViewSet(viewsets.ModelViewSet):
     serializer_class = MemberSerializer
     permission_classes = [IsAuthenticated]
 
+    @action(detail=True, methods=['post'])
+    def deposit(self, request, pk=None):
+        member = self.get_object()
+
+        amount = Decimal(request.data.get("amount", "0"))
+
+        if amount <= 0:
+            return Response(
+                {"error": "Invalid deposit amount"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        saving = Savings.objects.create(
+            member=member,
+            amount=amount
+        )
+
+        Transaction.objects.create(
+            member=member,
+            amount=amount,
+            type="DEPOSIT"
+        )
+
+        return Response(
+            {
+                "message": "Deposit recorded successfully",
+                "saving_id": saving.id,
+                "amount": str(saving.amount)
+            },
+            status=status.HTTP_201_CREATED
+        )
+
 
 # =========================
 # TRANSACTION VIEWSET
