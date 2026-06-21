@@ -26,19 +26,33 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = '__all__'
 
-
 class LoanSerializer(serializers.ModelSerializer):
-    member_name = serializers.CharField(source="member.name", read_only=True)
+    member_name = serializers.CharField(
+        source="member.name",
+        read_only=True
+    )
 
     class Meta:
         model = Loan
-        fields = '__all__'
+        fields = [
+            "id",
+            "member",
+            "member_name",
+            "amount",
+            "balance",
+            "interest_rate",
+            "status",
+            "date_applied",
+            "date_updated",
+            "last_interest_date",
+            "disbursed_at",
+        ]
 
-    def validate_status(self, value):
-        allowed_statuses = ["PENDING", "APPROVED", "REJECTED", "REPAID"]
-        if value not in allowed_statuses:
-            raise serializers.ValidationError(
-                f"Invalid status. Must be one of {allowed_statuses}."
-            )
-        return value
-
+        read_only_fields = [
+            "balance",
+            "status",
+            "date_applied",
+            "date_updated",
+            "last_interest_date",
+            "disbursed_at",
+        ]

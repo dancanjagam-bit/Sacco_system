@@ -1,6 +1,8 @@
 from decimal import Decimal
 from .permissions import IsAdmin
 
+from django.db import transaction as db_transaction
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -55,7 +57,6 @@ class MemberViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def deposit(self, request, pk=None):
         member = self.get_object()
-
         amount = Decimal(request.data.get("amount", "0"))
 
         if amount <= 0:
@@ -64,26 +65,60 @@ class MemberViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        saving = Savings.objects.create(
-            member=member,
-            amount=amount
-        )
+        with db_transaction.atomic():
 
-        Transaction.objects.create(
-            member=member,
-            amount=amount,
-            type="DEPOSIT"
-        )
+            saving = Savings.objects.create(
+                member=member,
+                amount=amount
+            )
 
-        return Response(
-            {
-                "message": "Deposit recorded successfully",
-                "saving_id": saving.id,
-                "amount": str(saving.amount)
-            },
-            status=status.HTTP_201_CREATED
-        )
+            member.total_savings += amount
+            member.save()
 
+            Transaction.objects.create(
+                member=member,
+                amount=amount,
+                type="DEPOSIT"
+            )
+
+        return Response({
+            "message": "Deposit successful",
+            "saving_id": saving.id,
+            "new_balance": str(member.total_savings)
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def withdraw(self, request, pk=None):
+        member = self.get_object()
+        amount = Decimal(request.data.get("amount", "0"))
+
+        if amount <= 0:
+            return Response(
+                {"error": "Invalid withdrawal amount"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if member.total_savings < amount:
+            return Response(
+                {"error": "Insufficient funds"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with db_transaction.atomic():
+
+            member.total_savings -= amount
+            member.save()
+
+            Transaction.objects.create(
+                member=member,
+                amount=amount,
+                type="WITHDRAW"
+            )
+
+        return Response({
+            "message": "Withdrawal successful",
+            "new_balance": str(member.total_savings)
+        }, status=status.HTTP_201_CREATED)
 
 # =========================
 # TRANSACTION VIEWSET
@@ -120,6 +155,14 @@ class LoanViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Loan.objects.all()
 
+    def perform_create(self, serializer):
+        loan = serializer.save(
+            status="PENDING"
+        )
+
+        loan.balance = loan.amount
+        loan.save(update_fields=["balance"])
+
     @action(detail=True, methods=['post'], permission_classes=[IsAdmin])
     def approve(self, request, pk=None):
         loan = self.get_object()
@@ -155,6 +198,7 @@ class LoanViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Loan rejected"})
 
+
     @action(detail=True, methods=['post'])
     def repay(self, request, pk=None):
 
@@ -187,17 +231,13 @@ class LoanViewSet(viewsets.ModelViewSet):
                     {"error": "Repayment amount exceeds loan balance"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-                LoanRepayment.objects.create(
-                    loan=loan,
-                    amount=amount
-                )
 
-                repayment = Transaction.objects.create(
-                    member=loan.member,
-                    loan=loan,
-                    amount=amount,
-                    type="LOAN_REPAYMENT"
-                )
+            repayment = Transaction.objects.create(
+                member=loan.member,
+                loan=loan,
+                amount=amount,
+                type="LOAN_REPAYMENT"
+            )
 
             loan.balance -= amount
 
@@ -220,47 +260,4 @@ class LoanViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_200_OK
             )
-    # =========================
-    # LOAN REPAYMENT ACTION
-    # =========================
-    @action(detail=True, methods=['post'])
-    def repay(self, request, pk=None):
-        loan = self.get_object()
-        amount = Decimal(request.data.get("amount", "0"))
 
-        if amount <= 0:
-            return Response(
-                {"error": "Invalid repayment amount"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # create repayment transaction
-        repayment = Transaction.objects.create(
-            member=loan.member,
-            loan=loan,
-            amount=amount,
-            type="LOAN_REPAYMENT"
-            )
-
-        # update loan balance
-        loan.balance -= amount
-        if loan.balance <= 0:
-            loan.balance = 0
-            loan.status = "REPAID"
-
-        loan.save()
-
-        return Response(
-            {
-                "message": "Repayment recorded successfully",
-                "loan_id": loan.id,
-                "balance": str(loan.balance),
-                "status": loan.status,
-                "repayment": {
-                    "id": repayment.id,
-                    "amount": str(repayment.amount),
-                    "date": repayment.date.strftime("%Y-%m-%d %H:%M:%S")
-                }
-            },
-            status=status.HTTP_200_OK
-        )
